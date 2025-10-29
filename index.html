@@ -2880,6 +2880,254 @@ const quizData = {
             type: "mcq",
             solution: "<strong>Correct Answer: c.</strong> Kleinberg proved that the optimal exponent for long-range links to enable efficient decentralized search via greedy routing is when the probability decays as $distance^{-d}$, where d is the dimension of the underlying space (e.g., d=2 for a 2D grid). This specific distribution leads to a search time that scales poly-logarithmically, specifically as $O((\log N)^{2})$."
         }
+    ],"Week 12": [
+        {
+            type: "question",
+            q: "1. In a large social network, most people form tight local groups (high clustering), yet any two individuals are connected through only a few intermediaries (short average path). What type of network is this?",
+            options: {
+                A: "Random network",
+                B: "Small-world network",
+                C: "Scale-free network",
+                D: "Complete graph"
+            },
+            a: ["B"],
+            type: "mcq",
+            solution: "<strong>Correct Answer: B.</strong> This describes a small-world network [cite: 711][cite_start], which is defined by a high clustering coefficient ('tight local groups') and short average path lengths ('few intermediaries')[cite: 714]."
+        },
+        {
+            type: "question",
+            q: "2. Suppose you have a social network of N people, and the average number of 'friendship hops' between any two random people grows on the order of log N. This phenomenon (e.g. 'six degrees of separation') is characteristic of what network property?",
+            options: {
+                A: "Preferential attachment",
+                B: "Homophily",
+                C: "Small-world property",
+                D: "Hierarchical structure"
+            },
+            a: ["C"],
+            type: "mcq",
+            solution: "<strong>Correct Answer: C.</strong> In small-world networks, the typical distance L between nodes grows proportionally to log N[cite: 718, 720]. This is the mathematical expression of the 'six degrees of separation' phenomenon."
+        },
+        {
+            type: "question",
+            q: "3. Consider a ring-lattice network where each person knows their two nearest neighbors. If we then add a few random 'weak ties' connecting distant parts of the network, what happens?",
+            options: {
+                A: "Clustering decreases dramatically.",
+                B: "Average path length drops significantly (small-world effect).",
+                C: "Degree of all nodes becomes equal.",
+                D: "The network becomes disconnected."
+            },
+            a: ["B"],
+            type: "mcq",
+            solution: "<strong>Correct Answer: B.</strong> This is the key finding of the Watts-Strogatz small-world model. [cite_start]Adding just a few random long-range links to a highly clustered lattice network dramatically reduces the average path length, creating the small-world effect[cite: 728, 731]."
+        },
+        {
+            type: "question",
+            q: "4. In a friendship network of high-school students, friendships mostly occur between students who share the same hobby (e.g. sports, music). This tendency to connect with similar others is known as:",
+            options: {
+                A: "Heterophily",
+                B: "Homophily",
+                C: "Preferential attachment",
+                D: "Transitivity"
+            },
+            a: ["B"],
+            type: "mcq",
+            solution: "<strong>Correct Answer: B.</strong> The tendency for individuals to associate with those who are similar to themselves (like sharing the same hobby) is called homophily[cite: 735, 738]."
+        },
+        {
+            type: "question",
+            q: "5. Imagine you build a network of collaborators by linking people who have the same professional background. Which process does this network formation illustrate?",
+            options: {
+                A: "Homophily-based linking",
+                B: "Random graph model",
+                C: "Triadic closure",
+                D: "Negative assortativity"
+            },
+            a: ["A"],
+            type: "mcq",
+            solution: "<strong>Correct Answer: A.</strong> Linking people based on shared attributes (e.g., 'same professional background') exemplifies homophily, where similarity drives the formation of edges[cite: 741, 748]."
+        },
+        {
+            type: "question",
+            q: "6. You simulate adding edges preferentially among similar individuals (homophily) versus adding random long-range edges (weak ties). Which effects does homophily have on the network? (Choose all that apply.)",
+            options: {
+                A: "Increases clustering within groups of similar nodes.",
+                B: "Decreases the number of bridges between different groups.",
+                C: "Tends to create community structures by attribute.",
+                D: "Leads to a random network with Poisson degree distribution."
+            },
+            a: ["A", "B", "C"],
+            type: "msq",
+            solution: "<strong>Correct Answer: A, B, C.</strong> Homophily causes nodes with similar attributes to connect, which raises clustering within those groups [cite: 752][cite_start], reduces cross-group bridges [cite: 753][cite_start], and thus forms attribute-based communities[cite: 754]. [cite_start]It does not produce a random Poisson graph[cite: 757]."
+        },
+        {
+            type: "question",
+            q: "7. A person wants to send a message to a target node in a network but only knows their immediate friends and the target's location. They always forward the message to the friend who is geographically closest to the target. What search strategy is this?",
+            options: {
+                A: "Breadth-first search",
+                B: "Random walk",
+                C: "Myopic (greedy) search",
+                D: "Depth-first search"
+            },
+            a: ["C"],
+            type: "mcq",
+            solution: "<strong>Correct Answer: C.</strong> This describes myopic (or greedy) search, where each node forwards the message to the neighbor that appears closest to the target, using only local information[cite: 762, 764]."
+        },
+        {
+            type: "question",
+            q: "8. In a decentralized search (like the Milgram experiment), each intermediate person knows only their neighbors and the ultimate target's city. They choose the neighbor whose city is closest to the target. This method is called:",
+            options: {
+                A: "Random search",
+                B: "Myopic search",
+                C: "Optimal (global) search",
+                D: "Parallel search"
+            },
+            a: ["B"],
+            type: "mcq",
+            solution: "<strong>Correct Answer: B.</strong> Forwarding to the friend that is closest to the target based on some attribute (like geography) is the exact strategy used in myopic search[cite: 773, 776]."
+        },
+        {
+            type: "question",
+            q: "9. Which statement is true about myopic (greedy) search compared to an optimal shortest-path search?",
+            options: {
+                A: "Myopic search always finds the absolute shortest path.",
+                B: "Myopic search uses only local neighbor information and may take longer paths.",
+                C: "Myopic search requires full knowledge of the network.",
+                D: "Myopic search is guaranteed to minimize path length globally."
+            },
+            a: ["B"],
+            type: "mcq",
+            solution: "<strong>Correct Answer: B.</strong> Myopic search relies only on local information (neighbors and the target's location)[cite: 782]. [cite_start]Because it lacks global knowledge, it can get 'stuck' or take suboptimal routes, resulting in paths that are longer than the true shortest path[cite: 779]."
+        },
+        {
+            type: "question",
+            q: "10. If a node has complete knowledge of the network, it can perform an optimal shortest-path search to the target. In contrast, a myopic search with local information will:",
+            options: {
+                A: "Always find the same path as the optimal search.",
+                B: "Potentially yield a longer route because it lacks global knowledge.",
+                C: "Never succeed in finding the target.",
+                D: "Use more memory than optimal search."
+            },
+            a: ["B"],
+            type: "mcq",
+            solution: "<strong>Correct Answer: B.</strong> Because myopic search cannot leverage full network knowledge, it may choose suboptimal routes and thus take more hops (a longer route) than an optimal search[cite: 786, 794]."
+        },
+        {
+            type: "question",
+            q: "11. In a model network of size $n=10^{6}$ with the optimal link distribution (long-range edges 1/d), the expected number of hops for myopic search is roughly proportional to $(log~n)^{2}$. Approximately how many steps would you expect for $n=10^{6}(log_{2}n\approx20)$?",
+            options: {
+                A: "20",
+                B: "100",
+                C: "1,000",
+                D: "10,000"
+            },
+            a: ["B"],
+            type: "mcq",
+            solution: "<strong>Correct Answer: B.</strong> The expected path length is proportional to $(log_{2}N)^{2}$[cite: 795, 810]. [cite_start]Given $log_{2}N \approx 20$, the path length is proportional to $20^{2} = 400$[cite: 802]. [cite_start]The closest order-of-magnitude estimate to 400 is 100[cite: 798, 803]."
+        },
+        {
+            type: "question",
+            q: "12. For the same network model, how does the expected search cost scale with network size n?",
+            options: {
+                A: "O(n)",
+                B: "O(log n)",
+                C: "O((log n)^{2})",
+                D: "O(n log n)"
+            },
+            a: ["C"],
+            type: "mcq",
+            solution: "<strong>Correct Answer: C.</strong> As stated in the analysis for the previous question, the expected search time (cost) in Kleinberg's model with the optimal link distribution scales as $O((log~n)^{2})$[cite: 807, 810]."
+        },
+        {
+            type: "question",
+            q: "13. Even in very large real-world social networks (millions of nodes), myopic search often finds targets in only a few dozen steps. Why is this?",
+            options: {
+                A: "Real networks are actually random (so log n is small).",
+                B: "Networks have small-world structure with many shortcuts, allowing myopic search to 'hop' close to the target quickly.",
+                C: "People cheat and share global maps.",
+                D: "Most people have degree exactly 2."
+            },
+            a: ["B"],
+            type: "mcq",
+            solution: "<strong>Correct Answer: B.</strong> Real social networks exhibit the small-world effect (high clustering plus random long-range ties/shortcuts)[cite: 818, 822]. [cite_start]This structure is what allows myopic (greedy) search to be surprisingly efficient, finding short routes even in massive networks[cite: 822]."
+        },
+        {
+            type: "question",
+            q: "14. A recent study defines pseudo-cores in a network. What are they?",
+            options: {
+                A: "The highest-degree nodes.",
+                B: "Intermediate k-shells whose nodes trigger cascades almost as large as the true core.",
+                C: "Trees hanging off the core.",
+                D: "Nodes in the periphery."
+            },
+            a: ["B"],
+            type: "mcq",
+            solution: "<strong>Correct Answer: B.</strong> Pseudo-cores are identified network shells (from k-core decomposition) that 'emulate the behavior of the core in terms of size of the cascade triggered'[cite: 825, 829]. They are not the core itself, but intermediate shells with similar spreading power."
+        },
+        {
+            type: "question",
+            q: "15. In experiments with viral memes, which target set of nodes produced cascades comparable to hitting the actual core?",
+            options: {
+                A: "Only the core nodes.",
+                B: "Pseudo-core shell nodes.",
+                C: "Random peripheral nodes.",
+                D: "The node(s) with highest betweenness."
+            },
+            a: ["B"],
+            type: "mcq",
+            solution: "<strong>Correct Answer: B.</strong> The study found that targeting a 'pseudo-core shell' can yield cascades almost as large as targeting the true core of the network[cite: 832, 840]."
+        },
+        {
+            type: "question",
+            q: "16. Which statement about pseudo-cores is true?",
+            options: {
+                A: "They have no special role in spreading processes.",
+                B: "They have spreading power similar to the core of the network.",
+                C: "They consist only of the network's hubs.",
+                D: "They are always smaller than any periphery shell."
+            },
+            a: ["B"],
+            type: "mcq",
+            solution: "<strong>Correct Answer: B.</strong> By definition, pseudo-core shells 'emulate the behavior of the core' [cite: 847][cite_start], meaning they have comparable influence or 'spreading power' in diffusion processes[cite: 843, 847]."
+        },
+        {
+            type: "question",
+            q: "17. If you want a meme to go viral in a social network, which strategy is most effective? (Choose all that apply.)",
+            options: {
+                A: "Seed it at the highest-degree hubs.",
+                B: "Seed it at nodes in the network's core (highest k-shell).",
+                C: "Seed it at nodes in pseudo-core shells.",
+                D: "Seed it at randomly chosen peripheral nodes."
+            },
+            a: ["B", "C"],
+            type: "msq",
+            solution: "<strong>Correct Answer: B, C.</strong> Nodes deep in the core (highest k-shell) are identified as highly efficient spreaders[cite: 851, 854]. [cite_start]Additionally, pseudo-core nodes have been shown to trigger nearly as large cascades[cite: 852, 854]. [cite_start]Hubs (highest-degree) are not always the same as core nodes and may not be as effective[cite: 855]."
+        },
+        {
+            type: "question",
+            q: "18. Suppose a network is divided into core and periphery. Which set of seed nodes will most likely maximize the reach of a cascade? (Select all that apply.)",
+            options: {
+                A: "Peripheral nodes with few connections.",
+                B: "Nodes in the highest k-core (core nodes).",
+                C: "Nodes in pseudo-core shells.",
+                D: "Nodes with medium degree only."
+            },
+            a: ["B", "C"],
+            type: "msq",
+            solution: "<strong>Correct Answer: B, C.</strong> Core nodes are known to be the most efficient spreaders[cite: 859, 865]. [cite_start]Pseudo-core nodes have been shown to achieve similar cascade sizes[cite: 863, 865]. [cite_start]Peripheral or medium-degree nodes are not optimal seeding points[cite: 866]."
+        },
+        {
+            type: "question",
+            q: "19. In graph theory, what is a k-core of a graph?",
+            options: {
+                A: "A subgraph where every vertex has degree at least k.",
+                B: "The set of k nodes with highest degree.",
+                C: "A path of length k.",
+                D: "The neighbors of the highest-degree node."
+            },
+            a: ["A"],
+            type: "mcq",
+            solution: "<strong>Correct Answer: A.</strong> A k-core is a maximal subgraph in which every vertex has a degree of at least k (within that subgraph)[cite: 868, 873]."
+        }
     ]
 };
 
