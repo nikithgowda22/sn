@@ -53,6 +53,47 @@
             background-color: #28a745;
             font-weight: bold;
         }
+        /* Scroll-to-Top Button Styling */
+        #scrollToTopBtn {
+            display: none; /* Hidden by default */
+            position: fixed; /* Fixed position */
+            bottom: 30px; /* Place at the bottom */
+            right: 30px; /* Place at the right */
+            z-index: 99; /* Make sure it's on top */
+            border: none; /* Remove borders */
+            outline: none; /* Remove outline */
+            background-color: #28a745; /* Green background */
+            color: white; /* White text/arrow */
+            cursor: pointer; /* Add a mouse pointer on hover */
+            padding: 15px; /* Some padding */
+            border-radius: 50%; /* Circular shape */
+            font-size: 18px; /* Increase font size */
+            width: 50px; /* Fixed width */
+            height: 50px; /* Fixed height */
+            line-height: 20px; /* Center arrow vertically */
+            transition: background-color 0.3s, opacity 0.3s;
+        }
+
+        #scrollToTopBtn:hover {
+            background-color: #218838; /* Darker green on hover */
+        }
+
+        /* Shuffle Options Button Styling (adjust as needed) */
+        .shuffle-btn {
+            background-color: #17a2b8; /* Teal color */
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9em;
+            margin: 15px 0 5px 0; /* Add some margin */
+            transition: background-color 0.3s;
+        }
+
+        .shuffle-btn:hover {
+            background-color: #138496; /* Darker teal */
+        }
         .quiz-content {
             display: none;
         }
@@ -3136,131 +3177,240 @@ const quizData = {
 document.addEventListener('DOMContentLoaded', function() {
     const navContainer = document.getElementById('quiz-nav');
     const quizContainer = document.getElementById('quiz-container');
+    const scrollToTopBtn = document.getElementById('scrollToTopBtn');
+
+    // --- Scroll-to-Top Logic ---
+    window.onscroll = function() { scrollFunction() };
+    function scrollFunction() {
+        if (document.body.scrollTop > 100 || document.documentElement.scrollTop > 100) {
+            scrollToTopBtn.style.display = "block";
+        } else {
+            scrollToTopBtn.style.display = "none";
+        }
+    }
+    scrollToTopBtn.addEventListener('click', function() {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+    // --- End Scroll-to-Top Logic ---
 
     // Create nav buttons and quiz containers
-    Object.keys(quizData).forEach((week, index) => {
-        // Nav button
+    Object.keys(quizData).forEach((week) => {
+        const weekKey = week.replace(/ /g, '-');
+
         const button = document.createElement('button');
         button.textContent = week;
         button.onclick = () => showQuiz(week);
         navContainer.appendChild(button);
 
-        // Quiz content div
         const quizDiv = document.createElement('div');
-        quizDiv.id = week.replace(/ /g, '-'); // Handle spaces in keys
+        quizDiv.id = weekKey;
         quizDiv.className = 'quiz-content';
         quizDiv.innerHTML = `<h2>${week} Quiz</h2>`;
+
+        const shuffleButton = document.createElement('button');
+        shuffleButton.textContent = 'Shuffle Options for this Week';
+        shuffleButton.className = 'shuffle-btn';
+        shuffleButton.onclick = () => shuffleOptionsForWeek(weekKey);
+        quizDiv.appendChild(shuffleButton);
+
         quizContainer.appendChild(quizDiv);
     });
 
-    // Load content for all quizzes
     loadAllQuizzes();
 
-    // Show the first week by default
-    showQuiz("Week 0");
+    const firstWeek = Object.keys(quizData)[0];
+    if (firstWeek) {
+        showQuiz(firstWeek);
+    }
 });
 
+// --- loadAllQuizzes function ---
 function loadAllQuizzes() {
     Object.keys(quizData).forEach(week => {
         const weekKey = week.replace(/ /g, '-');
         const quizContentDiv = document.getElementById(weekKey);
-        const questions = quizData[week];
+        if (!quizContentDiv) {
+            console.error(`Element with ID ${weekKey} not found.`);
+            return;
+        }
+         // Clear previous content if any (safer for reloading/reshuffling)
+        // Keep H2 and Shuffle button
+        while (quizContentDiv.children.length > 2) {
+             quizContentDiv.removeChild(quizContentDiv.lastChild);
+        }
 
-        questions.forEach((qData, index) => {
-            const card = document.createElement('div');
-            card.className = 'question-card';
-            
-            let optionsHTML = '';
-            const inputType = qData.type === 'mcq' ? 'radio' : 'checkbox';
-            
-            for (const key in qData.options) {
-                optionsHTML += `
-                    <div>
-                        <label>
-                            <input type="${inputType}" name="q-${weekKey}-${index}" value="${key}">
-                            ${key.toUpperCase()}. ${qData.options[key]}
-                        </label>
-                    </div>
+        const items = quizData[week];
+        let questionCounter = 0; // Use a simple 0-based index for questions within the week
+
+        items.forEach((item) => {
+            if (item.type === 'case') {
+                const caseDiv = document.createElement('div');
+                caseDiv.className = 'case-study';
+                caseDiv.innerHTML = `
+                    <h3>${item.title}</h3>
+                    <p>${item.text.replace(/\$/g, '')}</p>
                 `;
+                quizContentDiv.appendChild(caseDiv);
             }
+            // Check if it's a question (explicitly or implicitly)
+            else if (item.type === 'question' || (item.q && item.options)) {
+                if(!item.type) { // Add warning for missing type
+                     console.warn(`Item in ${week} is missing 'type'. Assuming 'question'.`, item);
+                }
 
-            card.innerHTML = `
-                <p>${qData.q}</p>
-                <div class="options" id="options-${weekKey}-${index}">${optionsHTML}</div>
-                <button class="check-btn" onclick="checkAnswer('${week}', ${index}, this)">Check Answer</button>
-                <div class="feedback" id="feedback-${weekKey}-${index}"></div>
-                <div class="solution" id="solution-${weekKey}-${index}">${qData.solution}</div>
-            `;
-            quizContentDiv.appendChild(card);
+                const card = document.createElement('div');
+                card.className = 'question-card';
+                // Store the week and the current question index directly on the card
+                card.dataset.week = week;
+                card.dataset.qIndex = questionCounter;
+                card.id = `${weekKey}-q-${questionCounter}`; // Use simple index for ID
+
+                let optionsHTML = '';
+                const isMSQ = item.qType === 'msq' || (Array.isArray(item.a) && item.a.length > 1);
+                const inputType = isMSQ ? 'checkbox' : 'radio';
+                const optionKeys = Object.keys(item.options);
+
+                optionKeys.forEach(key => {
+                    const optionText = typeof item.options[key] === 'string' ? item.options[key].replace(/\$/g, '') : item.options[key];
+                    optionsHTML += `
+                        <div class="option-item" data-original-key="${key}">
+                            <label>
+                                <input type="${inputType}" name="q-${weekKey}-${questionCounter}" value="${key}">
+                                <span class="option-letter">${key.toUpperCase()}.</span> ${optionText}
+                            </label>
+                        </div>
+                    `;
+                });
+
+                const questionText = typeof item.q === 'string' ? item.q.replace(/\$/g, '') : item.q;
+
+                card.innerHTML = `
+                    <p>${questionText}</p>
+                    <div class="options" id="options-${weekKey}-${questionCounter}">${optionsHTML}</div>
+                    <button class="check-btn" onclick="checkAnswer(this)">Check Answer</button>
+                    <div class="feedback" id="feedback-${weekKey}-${questionCounter}"></div>
+                    <div class="solution" id="solution-${weekKey}-${questionCounter}">${item.solution.replace(/\$/g, '')}</div>
+                `;
+                quizContentDiv.appendChild(card);
+                questionCounter++; // Increment index ONLY after adding a question card
+            } else {
+                 console.warn(`Skipping unknown item type in ${week}:`, item);
+            }
         });
     });
 }
 
-function showQuiz(week) {
-    // Hide all quiz content
-    document.querySelectorAll('.quiz-content').forEach(div => div.classList.remove('active'));
-    // Deactivate all nav buttons
-    document.querySelectorAll('#quiz-nav button').forEach(btn => btn.classList.remove('active'));
+// --- Shuffle Function (Mostly Unchanged) ---
+function shuffleOptionsForWeek(weekKey) {
+    const quizContentDiv = document.getElementById(weekKey);
+    const questionCards = quizContentDiv.querySelectorAll('.question-card');
 
-    // Show the selected week's content
-    const weekKey = week.replace(/ /g, '-');
-    const elementToShow = document.getElementById(weekKey);
-    if (elementToShow) {
-        elementToShow.classList.add('active');
-    }
+    questionCards.forEach(card => {
+        const optionsContainer = card.querySelector('.options');
+        const optionItems = Array.from(optionsContainer.querySelectorAll('.option-item'));
 
-    // Activate the selected nav button
-    const activeButton = Array.from(document.querySelectorAll('#quiz-nav button')).find(btn => btn.textContent === week);
-    if(activeButton) {
-        activeButton.classList.add('active');
-    }
+        for (let i = optionItems.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [optionItems[i], optionItems[j]] = [optionItems[j], optionItems[i]];
+        }
+
+        optionsContainer.innerHTML = '';
+        const letters = "abcdefghijklmnopqrstuvwxyz";
+        optionItems.forEach((item, idx) => {
+            const letterSpan = item.querySelector('.option-letter');
+            if(letterSpan) letterSpan.textContent = `${letters[idx].toUpperCase()}.`;
+            optionsContainer.appendChild(item);
+        });
+
+        const feedbackEl = card.querySelector('.feedback');
+        const solutionEl = card.querySelector('.solution');
+        const checkBtn = card.querySelector('.check-btn');
+        if (feedbackEl) feedbackEl.textContent = '';
+        if (feedbackEl) feedbackEl.className = 'feedback';
+        if (solutionEl) solutionEl.style.display = 'none';
+        if (checkBtn) {
+             checkBtn.disabled = false;
+             checkBtn.textContent = 'Check Answer';
+        }
+        card.querySelectorAll('.option-item').forEach(opt => opt.classList.remove('option-correct', 'option-incorrect'));
+        card.querySelectorAll('input').forEach(inp => inp.checked = false);
+    });
+     // Optional: Scroll to the top of the quiz section after shuffling
+     quizContentDiv.querySelector('h2').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
-function checkAnswer(week, qIndex, buttonEl) {
+// --- showQuiz function (Unchanged) ---
+function showQuiz(week) {
+    document.querySelectorAll('.quiz-content').forEach(div => div.classList.remove('active'));
+    document.querySelectorAll('#quiz-nav button').forEach(btn => btn.classList.remove('active'));
     const weekKey = week.replace(/ /g, '-');
-    const question = quizData[week][qIndex];
-    const correctAnswers = question.a;
-    const optionsContainer = document.getElementById(`options-${weekKey}-${qIndex}`);
-    const selectedOptions = optionsContainer.querySelectorAll('input:checked');
-    const feedbackEl = document.getElementById(`feedback-${weekKey}-${qIndex}`);
-    const solutionEl = document.getElementById(`solution-${weekKey}-${qIndex}`);
+    const elementToShow = document.getElementById(weekKey);
+    if (elementToShow) elementToShow.classList.add('active');
+    const activeButton = Array.from(document.querySelectorAll('#quiz-nav button')).find(btn => btn.textContent === week);
+    if (activeButton) activeButton.classList.add('active');
+}
 
+// --- Updated checkAnswer function ---
+function checkAnswer(buttonEl) {
+    const card = buttonEl.closest('.question-card'); // Find the parent question card
+    if (!card) return; // Exit if card not found
+
+    const week = card.dataset.week;
+    const qIndex = parseInt(card.dataset.qIndex, 10); // Get the simple question index
+    const weekKey = week.replace(/ /g, '-');
+
+    // Find the actual question object using the simple index
+    // Filter out non-questions first
+    const questionsForWeek = quizData[week].filter(item => item.type === 'question' || (item.q && item.options));
+    const question = questionsForWeek[qIndex]; // Direct access using the simple index
+
+    if (!question) {
+        console.error("Could not find question data for week:", week, "qIndex:", qIndex);
+        return;
+    }
+
+    const correctAnswers = Array.isArray(question.a) ? [...question.a] : [];
+    // Use the simple index for element IDs
+    const optionsContainer = card.querySelector(`#options-${weekKey}-${qIndex}`);
+    const feedbackEl = card.querySelector(`#feedback-${weekKey}-${qIndex}`);
+    const solutionEl = card.querySelector(`#solution-${weekKey}-${qIndex}`);
+
+    if(!optionsContainer || !feedbackEl || !solutionEl) {
+         console.error("Could not find necessary elements for week:", week, "qIndex:", qIndex);
+         return;
+     }
+
+    const selectedOptions = optionsContainer.querySelectorAll('input:checked');
     let userAnswers = [];
     selectedOptions.forEach(input => userAnswers.push(input.value));
-    
-    // Sort for comparison
+
     userAnswers.sort();
     correctAnswers.sort();
 
     const isCorrect = JSON.stringify(userAnswers) === JSON.stringify(correctAnswers);
 
-    if (isCorrect) {
-        feedbackEl.textContent = 'Correct!';
-        feedbackEl.className = 'feedback correct';
-    } else {
-        feedbackEl.textContent = 'Incorrect.';
-        feedbackEl.className = 'feedback incorrect';
-    }
+    feedbackEl.textContent = isCorrect ? 'Correct!' : 'Incorrect.';
+    feedbackEl.className = isCorrect ? 'feedback correct' : 'feedback incorrect';
 
-    // Highlight options
-    const allOptions = optionsContainer.querySelectorAll('input');
-    allOptions.forEach(input => {
-        const parentLabelDiv = input.parentElement.parentElement;
-        parentLabelDiv.classList.remove('option-correct', 'option-incorrect'); // Clear previous
-        if(correctAnswers.includes(input.value)) {
-            parentLabelDiv.classList.add('option-correct');
-        } else if (userAnswers.includes(input.value)) {
-            parentLabelDiv.classList.add('option-incorrect');
+    const allOptionItems = optionsContainer.querySelectorAll('.option-item');
+    allOptionItems.forEach(itemDiv => {
+        const input = itemDiv.querySelector('input');
+        if (!input) return;
+        itemDiv.classList.remove('option-correct', 'option-incorrect');
+        const originalKeyValue = input.value;
+        if (correctAnswers.includes(originalKeyValue)) {
+            itemDiv.classList.add('option-correct');
+        } else if (userAnswers.includes(originalKeyValue)) {
+            itemDiv.classList.add('option-incorrect');
         }
     });
 
-
-    // Show solution and disable button
     solutionEl.style.display = 'block';
     buttonEl.disabled = true;
     buttonEl.textContent = 'Answer Checked';
 }
-</script>
 
+</script>
+<button id="scrollToTopBtn" title="Go to top">↑</button>
 </body>
 </html>
