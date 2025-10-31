@@ -3276,7 +3276,6 @@ function loadAllQuizzes() {
                 `;
                 quizContentDiv.appendChild(caseDiv);
             }
-            // *** CORRECTED LOGIC HERE ***
             // Check if it's a question by looking for 'q' and 'options'
             else if (item.q && item.options) { 
                 
@@ -3315,7 +3314,6 @@ function loadAllQuizzes() {
                 quizContentDiv.appendChild(card);
                 questionCounter++; 
             } else {
-                 // This will now only catch items that are not cases AND not questions
                  console.warn(`Skipping unknown item type in ${week}:`, item);
             }
         });
@@ -3329,8 +3327,6 @@ function gatherAllQuestions() {
     Object.keys(quizData).forEach(week => {
         let questionCounter = 0;
         quizData[week].forEach(item => {
-            // *** CORRECTED LOGIC HERE ***
-            // Check if it's a question by looking for 'q' and 'options'
             if (item.q && item.options) {
                 allQuestions.push({
                     ...item,
@@ -3374,17 +3370,15 @@ function startPracticeSession() {
     practiceDiv.querySelector('h2').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
-// --- NEW: Function to populate the practice div ---
+// --- UPDATED: Function to populate the practice div ---
 function populatePracticeDiv(divToPopulate, questionList) {
     const practiceIDPrefix = "Practice-Session";
 
     questionList.forEach((item, practiceIndex) => {
         const card = document.createElement('div');
         card.className = 'question-card';
-        // Store the *original* week and *original* qIndex
         card.dataset.week = item.weekKey;
         card.dataset.qIndex = item.qIndex; 
-        
         card.id = `${practiceIDPrefix}-q-${practiceIndex}`;
 
         let optionsHTML = '';
@@ -3406,9 +3400,10 @@ function populatePracticeDiv(divToPopulate, questionList) {
 
         const questionText = typeof item.q === 'string' ? item.q.replace(/\$/g, '') : item.q;
 
+        // *** THIS IS THE FIXED PART ***
+        // The unwanted comment line is now removed.
         card.innerHTML = `
-            <p style="font-size: 0.8em; color: #6c757d; font-weight: normal; margin-bottom: -10px;">(From ${item.weekKey})</p> 
-            <p>${questionText}</p>
+            <p>${questionText}</p> 
             <div class="options" id="options-${practiceIDPrefix}-${practiceIndex}">${optionsHTML}</div>
             <button class="check-btn" onclick="checkAnswer(this)">Check Answer</button>
             <div class="feedback" id="feedback-${practiceIDPrefix}-${practiceIndex}"></div>
@@ -3417,7 +3412,6 @@ function populatePracticeDiv(divToPopulate, questionList) {
         divToPopulate.appendChild(card);
     });
 }
-
 
 // --- New Shuffle Function ---
 function shuffleOptionsForWeek(weekKey) {
@@ -3471,7 +3465,7 @@ function showQuiz(week) {
     if (activeButton) activeButton.classList.add('active');
 }
 
-// --- Updated checkAnswer function ---
+// --- Updated checkAnswer function (Unchanged from last time) ---
 function checkAnswer(buttonEl) {
     const card = buttonEl.closest('.question-card');
     if (!card) return;
