@@ -3173,6 +3173,9 @@ const quizData = {
 };
 
 
+// --- GLOBAL CACHE FOR ALL QUESTIONS ---
+let allQuestions = [];
+
 // --- SCRIPT LOGIC ---
 document.addEventListener('DOMContentLoaded', function() {
     const navContainer = document.getElementById('quiz-nav');
@@ -3193,7 +3196,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     // --- End Scroll-to-Top Logic ---
 
-    // Create nav buttons and quiz containers
+    // Create nav buttons and quiz containers for Weeks
     Object.keys(quizData).forEach((week) => {
         const weekKey = week.replace(/ /g, '-');
 
@@ -3216,15 +3219,37 @@ document.addEventListener('DOMContentLoaded', function() {
         quizContainer.appendChild(quizDiv);
     });
 
+    // --- NEW: Add Practice Session button and div ---
+    const practiceButton = document.createElement('button');
+    practiceButton.textContent = "Practice Session";
+    practiceButton.style.backgroundColor = "#ffc107"; // Give it a distinct color
+    practiceButton.style.color = "#333";
+    practiceButton.onclick = () => startPracticeSession();
+    navContainer.appendChild(practiceButton);
+
+    const practiceDiv = document.createElement('div');
+    practiceDiv.id = "Practice-Session";
+    practiceDiv.className = 'quiz-content';
+    practiceDiv.innerHTML = `<h2>Practice Session Quiz</h2>
+        <button class="shuffle-btn" onclick="shuffleOptionsForWeek('Practice-Session')">Shuffle Options for this Session</button>`;
+    quizContainer.appendChild(practiceDiv);
+    // --- End Practice Session ---
+
+
+    // Load content for all *standard* quizzes
     loadAllQuizzes();
 
+    // Gather all questions into the global cache
+    gatherAllQuestions();
+
+    // Show the first week by default
     const firstWeek = Object.keys(quizData)[0];
     if (firstWeek) {
         showQuiz(firstWeek);
     }
 });
 
-// --- loadAllQuizzes function ---
+// --- Updated loadAllQuizzes function ---
 function loadAllQuizzes() {
     Object.keys(quizData).forEach(week => {
         const weekKey = week.replace(/ /g, '-');
@@ -3233,14 +3258,13 @@ function loadAllQuizzes() {
             console.error(`Element with ID ${weekKey} not found.`);
             return;
         }
-         // Clear previous content if any (safer for reloading/reshuffling)
-        // Keep H2 and Shuffle button
-        while (quizContentDiv.children.length > 2) {
-             quizContentDiv.removeChild(quizContentDiv.lastChild);
+        // Check if content already loaded (children > 2 means H2, Shuffle, + questions)
+        if (quizContentDiv.children.length > 2) {
+             return;
         }
 
         const items = quizData[week];
-        let questionCounter = 0; // Use a simple 0-based index for questions within the week
+        let questionCounter = 0; 
 
         items.forEach((item) => {
             if (item.type === 'case') {
@@ -3252,18 +3276,15 @@ function loadAllQuizzes() {
                 `;
                 quizContentDiv.appendChild(caseDiv);
             }
-            // Check if it's a question (explicitly or implicitly)
-            else if (item.type === 'question' || (item.q && item.options)) {
-                if(!item.type) { // Add warning for missing type
-                     console.warn(`Item in ${week} is missing 'type'. Assuming 'question'.`, item);
-                }
-
+            // *** CORRECTED LOGIC HERE ***
+            // Check if it's a question by looking for 'q' and 'options'
+            else if (item.q && item.options) { 
+                
                 const card = document.createElement('div');
                 card.className = 'question-card';
-                // Store the week and the current question index directly on the card
                 card.dataset.week = week;
                 card.dataset.qIndex = questionCounter;
-                card.id = `${weekKey}-q-${questionCounter}`; // Use simple index for ID
+                card.id = `${weekKey}-q-${questionCounter}`;
 
                 let optionsHTML = '';
                 const isMSQ = item.qType === 'msq' || (Array.isArray(item.a) && item.a.length > 1);
@@ -3292,21 +3313,121 @@ function loadAllQuizzes() {
                     <div class="solution" id="solution-${weekKey}-${questionCounter}">${item.solution.replace(/\$/g, '')}</div>
                 `;
                 quizContentDiv.appendChild(card);
-                questionCounter++; // Increment index ONLY after adding a question card
+                questionCounter++; 
             } else {
+                 // This will now only catch items that are not cases AND not questions
                  console.warn(`Skipping unknown item type in ${week}:`, item);
             }
         });
     });
 }
 
-// --- Shuffle Function (Mostly Unchanged) ---
+// --- NEW: Function to gather all questions ---
+function gatherAllQuestions() {
+    if (allQuestions.length > 0) return allQuestions; // Don't re-run
+
+    Object.keys(quizData).forEach(week => {
+        let questionCounter = 0;
+        quizData[week].forEach(item => {
+            // *** CORRECTED LOGIC HERE ***
+            // Check if it's a question by looking for 'q' and 'options'
+            if (item.q && item.options) {
+                allQuestions.push({
+                    ...item,
+                    weekKey: week,
+                    qIndex: questionCounter // This is the simple index *within that week's questions*
+                });
+                questionCounter++;
+            }
+        });
+    });
+    return allQuestions;
+}
+
+// --- NEW: Fisher-Yates Shuffle Function ---
+function shuffleArray(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+    }
+}
+
+// --- NEW: Function to start a practice session ---
+function startPracticeSession() {
+    const masterQuestionList = gatherAllQuestions();
+    if (masterQuestionList.length === 0) {
+        alert("No questions found. Please check your quizData configuration.");
+        return;
+    }
+    
+    shuffleArray(masterQuestionList);
+    const practiceQuestions = masterQuestionList.slice(0, 50);
+    
+    const practiceDiv = document.getElementById("Practice-Session");
+    
+    const oldCards = practiceDiv.querySelectorAll('.question-card');
+    oldCards.forEach(card => card.remove());
+
+    populatePracticeDiv(practiceDiv, practiceQuestions);
+
+    showQuiz("Practice Session");
+    practiceDiv.querySelector('h2').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// --- NEW: Function to populate the practice div ---
+function populatePracticeDiv(divToPopulate, questionList) {
+    const practiceIDPrefix = "Practice-Session";
+
+    questionList.forEach((item, practiceIndex) => {
+        const card = document.createElement('div');
+        card.className = 'question-card';
+        // Store the *original* week and *original* qIndex
+        card.dataset.week = item.weekKey;
+        card.dataset.qIndex = item.qIndex; 
+        
+        card.id = `${practiceIDPrefix}-q-${practiceIndex}`;
+
+        let optionsHTML = '';
+        const isMSQ = item.qType === 'msq' || (Array.isArray(item.a) && item.a.length > 1);
+        const inputType = isMSQ ? 'checkbox' : 'radio';
+        const optionKeys = Object.keys(item.options);
+
+        optionKeys.forEach(key => {
+            const optionText = typeof item.options[key] === 'string' ? item.options[key].replace(/\$/g, '') : item.options[key];
+            optionsHTML += `
+                <div class="option-item" data-original-key="${key}">
+                    <label>
+                        <input type="${inputType}" name="q-${practiceIDPrefix}-${practiceIndex}" value="${key}">
+                        <span class="option-letter">${key.toUpperCase()}.</span> ${optionText}
+                    </label>
+                </div>
+            `;
+        });
+
+        const questionText = typeof item.q === 'string' ? item.q.replace(/\$/g, '') : item.q;
+
+        card.innerHTML = `
+            <p style="font-size: 0.8em; color: #6c757d; font-weight: normal; margin-bottom: -10px;">(From ${item.weekKey})</p> 
+            <p>${questionText}</p>
+            <div class="options" id="options-${practiceIDPrefix}-${practiceIndex}">${optionsHTML}</div>
+            <button class="check-btn" onclick="checkAnswer(this)">Check Answer</button>
+            <div class="feedback" id="feedback-${practiceIDPrefix}-${practiceIndex}"></div>
+            <div class="solution" id="solution-${practiceIDPrefix}-${practiceIndex}">${item.solution.replace(/\$/g, '')}</div>
+        `;
+        divToPopulate.appendChild(card);
+    });
+}
+
+
+// --- New Shuffle Function ---
 function shuffleOptionsForWeek(weekKey) {
     const quizContentDiv = document.getElementById(weekKey);
+    if (!quizContentDiv) return;
     const questionCards = quizContentDiv.querySelectorAll('.question-card');
 
     questionCards.forEach(card => {
         const optionsContainer = card.querySelector('.options');
+        if (!optionsContainer) return;
         const optionItems = Array.from(optionsContainer.querySelectorAll('.option-item'));
 
         for (let i = optionItems.length - 1; i > 0; i--) {
@@ -3335,8 +3456,8 @@ function shuffleOptionsForWeek(weekKey) {
         card.querySelectorAll('.option-item').forEach(opt => opt.classList.remove('option-correct', 'option-incorrect'));
         card.querySelectorAll('input').forEach(inp => inp.checked = false);
     });
-     // Optional: Scroll to the top of the quiz section after shuffling
-     quizContentDiv.querySelector('h2').scrollIntoView({ behavior: 'smooth', block: 'start' });
+     const h2 = quizContentDiv.querySelector('h2');
+     if (h2) h2.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 // --- showQuiz function (Unchanged) ---
@@ -3352,17 +3473,21 @@ function showQuiz(week) {
 
 // --- Updated checkAnswer function ---
 function checkAnswer(buttonEl) {
-    const card = buttonEl.closest('.question-card'); // Find the parent question card
-    if (!card) return; // Exit if card not found
+    const card = buttonEl.closest('.question-card');
+    if (!card) return;
 
     const week = card.dataset.week;
-    const qIndex = parseInt(card.dataset.qIndex, 10); // Get the simple question index
+    const qIndex = parseInt(card.dataset.qIndex, 10);
     const weekKey = week.replace(/ /g, '-');
 
+    if (quizData[week] === undefined) {
+         console.error("No data found for week:", week);
+         return;
+    }
+
     // Find the actual question object using the simple index
-    // Filter out non-questions first
-    const questionsForWeek = quizData[week].filter(item => item.type === 'question' || (item.q && item.options));
-    const question = questionsForWeek[qIndex]; // Direct access using the simple index
+    const questionsForWeek = quizData[week].filter(item => item.q && item.options);
+    const question = questionsForWeek[qIndex];
 
     if (!question) {
         console.error("Could not find question data for week:", week, "qIndex:", qIndex);
@@ -3370,10 +3495,11 @@ function checkAnswer(buttonEl) {
     }
 
     const correctAnswers = Array.isArray(question.a) ? [...question.a] : [];
-    // Use the simple index for element IDs
-    const optionsContainer = card.querySelector(`#options-${weekKey}-${qIndex}`);
-    const feedbackEl = card.querySelector(`#feedback-${weekKey}-${qIndex}`);
-    const solutionEl = card.querySelector(`#solution-${weekKey}-${qIndex}`);
+    
+    // Find elements *within the clicked card*
+    const optionsContainer = card.querySelector('.options');
+    const feedbackEl = card.querySelector('.feedback');
+    const solutionEl = card.querySelector('.solution');
 
     if(!optionsContainer || !feedbackEl || !solutionEl) {
          console.error("Could not find necessary elements for week:", week, "qIndex:", qIndex);
@@ -3409,7 +3535,6 @@ function checkAnswer(buttonEl) {
     buttonEl.disabled = true;
     buttonEl.textContent = 'Answer Checked';
 }
-
 </script>
 <button id="scrollToTopBtn" title="Go to top">↑</button>
 </body>
